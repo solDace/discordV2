@@ -10,7 +10,7 @@
 #include <poll.h>
 
 #define PORT IPPORT_USERRESERVED // = 5000
-#define MAX_USERS 6
+#define MAX_USERS 3
 #define LG_MESSAGE   256
 
 typedef struct User {
@@ -99,9 +99,13 @@ int main()
 			for(int j =0;j< nfds;j++){
 				if(pollfds[j].revents != 0){
 					if(j == 0){
-						for(int i =0;i<MAX_USERS;i++){
+						int i =0;
+						for(i=0;i<MAX_USERS;i++){
 							if(users[i].socketClient == 0){
 								users[i].socketClient = accept(socketEcoute,(struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
+								
+								snprintf(users[i].login,50, "user %d",i+1) ;
+								printf("%s s'est connecté\n\n",users[i].login) ;
 								if(users[i].socketClient < 0){
 									perror("accept");
 									close(users[i].socketClient);
@@ -110,6 +114,12 @@ int main()
 								}
 								break;
 							}
+						}
+						if(i == MAX_USERS)
+						{
+							close(users[i].socketClient);
+							printf("Max d'utilisateur atteint");
+							break;
 						}
 					}
 		else {
@@ -122,12 +132,11 @@ int main()
 							close(users[i].socketClient);
 							exit(-5);
 						case 0 :
-							fprintf(stderr,"La socket fermée par le client\n\n");
+							fprintf(stderr,"%s s'est déconecté\n\n");
 							close(users[i].socketClient);
 							users[i].socketClient = 0;
-							return 0;
 						default:
-							printf("Message reçu : %s (%d octets)\n\n",messageRecu,lus);
+							printf("Message reçu de %s: %s (%d octets)\n\n",users[i].login,messageRecu,lus);
 						}
 					}
 				}
