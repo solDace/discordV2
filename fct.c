@@ -29,7 +29,7 @@ int main()
 	char messageRecu[LG_MESSAGE]; /* le message de la couche Application ! */  
 	int ecrits, lus; /* nb d'octets ecrits et lus */
 	int retour;
-	struct user users[MAX_USERS];
+	user users[MAX_USERS];
 	struct pollfd pollfds[MAX_USERS + 1];
 
 	memset(users, '\0', MAX_USERS*sizeof(user));
@@ -93,7 +93,6 @@ int main()
 				nfds++;
 				}
 			}
-
 		nevents = poll(pollfds, nfds, -1);
 		if (nevents > 0) {
 			// parcours de pollfds[] à la recherche des revents != 0
@@ -102,7 +101,7 @@ int main()
 			for(int i =0;i<MAX_USERS;i++){
 				if(users[i].socketClient < 0){
 					users[i].socketClient = accept(socketEcoute,(struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
-					if (socketClient < 0){
+					if(socketClient < 0){
 						perror("accept");
 						close(users[i].socketClient);
 						close(socketEcoute);
@@ -125,7 +124,7 @@ int main()
 							close(users[i].socketClient);
 							return 0;
 						default:
-							printf("Message reçu : %s (%d octets)\n\n",messageRecu,lus);
+						printf("Message reçu : %s (%d octets)\n\n",messageRecu,lus);
 						}
 					}
 				}
@@ -136,7 +135,7 @@ int main()
 			// si c'est la socket socketEcoute => accept() + création d'une nouvelle entrée dans la table users[]
 			//
 			// sinon c'est une socket client => read() et gestion des erreurs pour le cas de la déconnexion
- else {
+		else {
 			printf("poll() returned %d\n", nevents);
 		}
 	}
