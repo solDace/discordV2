@@ -97,22 +97,24 @@ int main()
 		if (nevents > 0) {
 			// parcours de pollfds[] à la recherche des revents != 0
 			for(int j =0;j< nfds;j++){
-				if(j == 0){
-			for(int i =0;i<MAX_USERS;i++){
-				if(users[i].socketClient < 0){
-					users[i].socketClient = accept(socketEcoute,(struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
-					if(socketClient < 0){
-						perror("accept");
-						close(users[i].socketClient);
-						close(socketEcoute);
-						exit(-4);						
+				if(pollfds[j].revents != 0){
+					if(j == 0){
+						for(int i =0;i<MAX_USERS;i++){
+							if(users[i].socketClient == 0){
+								users[i].socketClient = accept(socketEcoute,(struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
+								if(users[i].socketClient < 0){
+									perror("accept");
+									close(users[i].socketClient);
+									close(socketEcoute);
+									exit(-4);						
+								}
+								break;
+							}
+						}
 					}
-				}
-			}
-		}
 		else {
 			for(int i=0; i<MAX_USERS;i++){
-				if(pollfd[j].fd == users[i].socketClient){
+				if(pollfds[j].fd == users[i].socketClient){
 					lus = read(users[i].socketClient,messageRecu,LG_MESSAGE*sizeof(char));
 					switch(lus){
 						case -1:
@@ -122,16 +124,19 @@ int main()
 						case 0 :
 							fprintf(stderr,"La socket fermée par le client\n\n");
 							close(users[i].socketClient);
+							users[i].socketClient = 0;
 							return 0;
 						default:
-						printf("Message reçu : %s (%d octets)\n\n",messageRecu,lus);
+							printf("Message reçu : %s (%d octets)\n\n",messageRecu,lus);
 						}
 					}
 				}
 			}
 		}
 	}
-			//
+}
+
+
 			// si c'est la socket socketEcoute => accept() + création d'une nouvelle entrée dans la table users[]
 			//
 			// sinon c'est une socket client => read() et gestion des erreurs pour le cas de la déconnexion
