@@ -125,7 +125,7 @@ int main()
 							close(users[i].socketClient);
 							return 0;
 						default:
-						printf("Message reçu : %s (%d octets)\n\n",messageRecu,lus);
+							printf("Message reçu : %s (%d octets)\n\n",messageRecu,lus);
 						}
 					}
 				}
