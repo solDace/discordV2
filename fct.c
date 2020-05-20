@@ -15,7 +15,7 @@
 
 typedef struct User {
 	int socketClient;
-	char login [50];
+	char login[50];
 	}user;
 
 int main()
@@ -26,10 +26,11 @@ int main()
 	struct sockaddr_in pointDeRencontreDistant;
 	char messageEnvoi[LG_MESSAGE]; /* le message de la couche Application ! */  
 	char messageRecu[LG_MESSAGE]; /* le message de la couche Application ! */ 
-	char messageAcceuil[LG_MESSAGE]; 
+	char messageProtocole[LG_MESSAGE]; 
 	char list[LG_MESSAGE];
-	int ecrits; 
+	int ecrits;
 	int lus; /* nb d'octets ecrits et lus */
+	char *mp;
 	//int retour;
 	user users[MAX_USERS];
 	struct pollfd pollfds[MAX_USERS + 1];
@@ -82,7 +83,7 @@ int main()
 		
 		memset(messageRecu, 0x00, LG_MESSAGE*sizeof(char));
 		memset(messageEnvoi, 0x00, LG_MESSAGE*sizeof(char));
-		memset(messageAcceuil, 0x00, LG_MESSAGE*sizeof(char));
+		memset(messageProtocole, 0x00, LG_MESSAGE*sizeof(char));
 		// Liste des sockets à écouter
 		// socketEcoute + users[].socket => pollfds[]
 		pollfds[nfds].fd = socketEcoute;
@@ -115,14 +116,14 @@ int main()
 							{
 								users[i].socketClient = accept(socketEcoute,(struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
 								
-								snprintf(users[i].login,50, "user %d",i+1) ;
+								snprintf(users[i].login,50, "user%d",i+1) ;
 								printf("%s s'est connecté\n\n",users[i].login) ;
 								for(int k=0; k<MAX_USERS;k++)
 								{
 									if(users[k].socketClient != 0)
 									{	
-										snprintf(messageAcceuil,50, "greetings user %d\n",i+1);
-										ecrits = write(users[k].socketClient, messageAcceuil, strlen(messageAcceuil));
+										snprintf(messageProtocole, 256, "greetings %s\n",users[i].login);
+										ecrits = write(users[k].socketClient, messageProtocole, strlen(messageProtocole));
 										if(ecrits == -1)
 										{
 											perror("write");
@@ -157,18 +158,16 @@ int main()
 								lus = read(users[i].socketClient,messageRecu,LG_MESSAGE*sizeof(char));
 								if(strstr(messageRecu,"<version>") != NULL)
 								{	
-									memset(messageEnvoi, 0x00, LG_MESSAGE*sizeof(char));
 									strcpy(messageEnvoi,"Version 1.0\n");
 									write(users[i].socketClient, messageEnvoi, strlen(messageEnvoi));
 								}
 								else if(strstr(messageRecu,"<list>") != NULL)
 								{
-									memset(messageEnvoi, 0x00, LG_MESSAGE*sizeof(char));
 									for(int k=0; k<MAX_USERS;k++)
 									{
 										if(users[k].socketClient != 0)
 										{		
-											snprintf(list, 50, "user %d|",k+1);
+											snprintf(list, 256, "%s|",users[k].login);
 											strcat(messageEnvoi,list);
 										}
 									}
@@ -177,18 +176,37 @@ int main()
 								}
 								else if(strstr(messageRecu,"<message>") != NULL)
 								{
-									memset(messageEnvoi, 0x00, LG_MESSAGE*sizeof(char));
-									strcpy(messageEnvoi,messageRecu);
-									for(int k=9; k<15; k++)
-										messageEnvoi[k] = messageEnvoi[k+1];
-									messageEnvoi[15] = ':';	
-									messageEnvoi[14] = (char)(i+49);
-									write(users[((int)messageRecu[15])-49].socketClient, messageEnvoi, strlen(messageEnvoi));
+									for(int k=0;k<MAX_USERS;k++)
+									{
+										
+										strcpy(messageProtocole,messageRecu);
+										strtok(messageProtocole," ");
+										mp = strtok(NULL," ");
+										if(strstr(mp,users[k].login) != NULL)
+										{
+											if(users[k].socketClient != 0)
+											{
+												snprintf(messageEnvoi, 256, "<message> %s:",users[i].login);
+												mp = strtok(NULL," ");
+												while(mp != NULL)
+												{
+													strcat(messageEnvoi," ");
+													strcat(messageEnvoi,mp);
+													mp = strtok(NULL," ");
+												}
+												write(users[k].socketClient, messageEnvoi, strlen(messageEnvoi));
+											}
+											/*else
+											{
+												strcpy(messageEnvoi,"<error>\n");
+												write(users[i].socketClient, messageEnvoi, strlen(messageEnvoi));
+											}*/
+										}
+									}
 								}
 								else
 								{
-									memset(messageEnvoi, 0x00, LG_MESSAGE*sizeof(char));
-									snprintf(messageEnvoi, 50, "user %d: ",i+1);
+									snprintf(messageEnvoi, 256, "%s: ",users[i].login);
 									strcat(messageEnvoi,messageRecu);
 									for(int k=0; k<MAX_USERS;k++)
 									{
@@ -201,7 +219,6 @@ int main()
 										}
 									}	
 								}
-								memset(messageEnvoi, 0x00, LG_MESSAGE*sizeof(char));
 								switch(lus)
 								{
 									case -1:
@@ -212,6 +229,7 @@ int main()
 										fprintf(stderr,"%s s'est déconecté\n\n",users[i].login);
 										close(users[i].socketClient);
 										users[i].socketClient = 0;
+										memset(users[i].login, 0x00, 50*sizeof(char));
 										for(int k=0; k<MAX_USERS;k++)
 										{
 											if(users[k].socketClient != 0)
