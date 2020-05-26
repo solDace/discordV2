@@ -117,7 +117,7 @@ int main()
 								
 								snprintf(users[i].login, LG_LOGIN, "user%d",i+1) ;
 								printf("%s s'est connecté\n\n",users[i].login);
-								write(users[i].socketClient, "<version> 1.0\n", strlen("<version> 1.0\n"));
+								write(users[i].socketClient, "<version> 1.0\n\n", strlen("<version> 1.0\n\n"));
 								for(int k = 0; k < MAX_USERS; k++)
 								{
 									if(users[k].socketClient != 0)
@@ -160,7 +160,7 @@ int main()
 								lus = read(users[i].socketClient,messageRecu,LG_MESSAGE*sizeof(char));
 								if(strncmp(messageRecu,"<version>",9) == 0)
 								{	
-									strcpy(messageEnvoi,"<version> 1.0");
+									strcpy(messageEnvoi,"<version> 1.0\n");
 									write(users[i].socketClient, messageEnvoi, strlen(messageEnvoi));
 								}
 								else if(strncmp(messageRecu,"<list>",6) == 0)
@@ -261,7 +261,7 @@ int main()
 										{
 											if(users[k].socketClient != 0)
 											{	
-												sprintf(messageEnvoi,"s'est déconecté\n"); 
+												sprintf(messageEnvoi,"%s s'est déconecté\n",users[i].login); 
 												ecrits = write(users[k].socketClient, messageEnvoi, strlen(messageEnvoi));
 												if(ecrits == -1)
 												{
