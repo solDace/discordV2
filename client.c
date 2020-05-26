@@ -23,6 +23,7 @@ int main()
 	char messageRecu[LG_MESSAGE]; /* le message de la couche Application ! */
 	int ecrits, lus; /* nb d’octets ecrits et lus */
 	int socketClient;
+	char *a;
 	struct pollfd pollfds[2];
 	
 	// Crée un socket de communication
@@ -85,9 +86,9 @@ int main()
 				switch(ecrits)
 				{
 					case -1 : 
-					perror("write");
-					close(socketClient);
-					exit(-3);
+						perror("write");
+						close(socketClient);
+						exit(-3);
 					return 0;
 				}
 			}
@@ -97,15 +98,28 @@ int main()
 				switch(lus)
 				{
 					case -1 : 
-					perror("read");
-					close(socketClient);
-					exit(-4);
+						perror("read");
+						close(socketClient);
+						exit(-4);
 					case 0 : 
-					fprintf(stderr, "La socket a été fermée par le serveur !\n\n");
-					close(socketClient);
-					return 0;
+						fprintf(stderr, "La socket a été fermée par le serveur !\n\n");
+						close(socketClient);
+						return 0;
 					default:
-					printf("%s \n", messageRecu);
+						if(strncmp(messageRecu,"<message>",9) == 0)
+						{
+							strtok(messageRecu," ");
+							a = strtok(NULL," ");
+							snprintf(messageRecu, 256, "%s:\n",a);
+							a = strtok(NULL," ");
+							while(a != NULL)
+							{
+								strcat(messageRecu,a);
+								strcat(messageRecu," ");
+								a = strtok(NULL," ");
+							}
+						}
+						printf("%s \n", messageRecu);
 				}	
 			}
 		}
